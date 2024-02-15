@@ -16,6 +16,65 @@ import Chats from "./chats";
 const Agent = () => {
     const [message, setMessage] = useState(DATA)
     const [chats, setChats] = useState(CHATS)
+    const myId = "197468190125742"
+    async function fetchData() {
+        try {
+            const response = await fetch('https://graph.facebook.com/v19.0/197468190125742/conversations?fields=participants,messages{id,message,created_time,from}&access_token=EAAZATCgv3TQMBO3A4zzn02mb6I0ZBTgVx9oop47LayBYelLU6l7ZBrhaNqVvZChzZCH8OHPdx1x7IGxULmmT6jnSD3dRfkHVropvmX2WrZAjUZCZCvdqZB47HMrIweZAqyybFIzukTEa4YTxqNRmS1LqYC8gQ4Opd51IGU2ZCP47uMDesunoR1ZBZBnh9m8M4FBFOtESpz02dwqjEE3D5ZByRQ18ygR4znd08PLk46');
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const resp = await response.json();
+            const data = resp.data;
+            // console.log(resp);
+
+            const getMessagesForParticipant = (participantId) => {
+                const participantData = data.find(item =>
+                    item.participants.data.some(participant => participant.id === participantId)
+                );
+                if (participantData) {
+                    // Return the messages data for the participant
+                    return participantData.messages.data;
+                } else {
+                    // Participant not found
+                    return [];
+                }
+            };
+
+            const participantId = "7143286139093169"; // ID of the participant
+            const dm_messages = getMessagesForParticipant(participantId); // Await the async function call
+            // Usage example
+            // console.log(dm_messages.reverse);
+            const dm_messages1 = dm_messages.map((_, index, arr) => arr[arr.length - 1 - index]);
+            // console.log(dm_messages1[0].from.name)
+            setChats(dm_messages1)
+
+        } catch (error) {
+            // Handle errors
+            console.error('There was a problem with the fetch operation:', error);
+        }
+    }
+
+    fetchData(); // Call the function
+
+    function convertGMTtoIST(gmtTime) {
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+        // Convert the GMT time string to a Date object
+        const gmtDate = new Date(gmtTime);
+
+        // Add the IST offset to the GMT date to get the IST date
+        const istDate = new Date(gmtDate.getTime());
+
+        // Format the IST date as "dd-mm-yyyy hh:mm"
+        const formattedDate = `${istDate.getDate().toString().padStart(2, '0')}-${monthNames[istDate.getMonth()]}-${istDate.getFullYear()} ${istDate.getHours().toString().padStart(2, '0')}:${istDate.getMinutes().toString().padStart(2, '0')}`;
+
+        return formattedDate;
+
+    }
+    // console.log(istTime);
+
     const [activeMessageIndex, setActiveMessageIndex] = useState(null);
     const handleSetActiveMessage = (index) => {
         setActiveMessageIndex(index); // Set the active message index
@@ -29,28 +88,52 @@ const Agent = () => {
     const email = 'john@gmail.com';
     const fName = 'John';
     const lName = 'Doe';
-    // Function to handle sending a message
-    const sendMessage = () => {
-        if (inputMessage.trim() !== '') {
-            // Create a new message object with the input message content
-            const newMessage = {
-                content: inputMessage,
-                sender: 'user', // Assuming the user is sending the message
-                timestamp: new Date().toISOString(), // Add a timestamp to the message
-            };
-            // Update the messages state with the new message
-            setMessages([...messages, newMessage]);
-            // Clear the input message
-            setInputMessage('');
-        }
-    };
-
     const [navActiveTab, setNavActiveTab] = useState('mailbox'); // Initial active tab
 
     const handleNavTabClick = (tab) => {
         setNavActiveTab(tab); // Set the active tab when clicked
     };
 
+
+
+    const handleKeyDown = async (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault(); // Prevent default behavior of Enter key
+
+            // Call your API or handle form submission here
+            try {
+                const response = await fetch('https://graph.facebook.com/v19.0/197468190125742/messages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Add any other headers required by your API
+                    },
+                    body: JSON.stringify({
+                        "recipient": { "id": 7143286139093169 },
+                        "message": { "text": inputMessage },
+                        "messaging_type": "RESPONSE",
+                        "access_token": "EAAZATCgv3TQMBO3A4zzn02mb6I0ZBTgVx9oop47LayBYelLU6l7ZBrhaNqVvZChzZCH8OHPdx1x7IGxULmmT6jnSD3dRfkHVropvmX2WrZAjUZCZCvdqZB47HMrIweZAqyybFIzukTEa4YTxqNRmS1LqYC8gQ4Opd51IGU2ZCP47uMDesunoR1ZBZBnh9m8M4FBFOtESpz02dwqjEE3D5ZByRQ18ygR4znd08PLk46"
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                // Handle success response
+                console.log('Message sent successfully');
+            } catch (error) {
+                // Handle error
+                console.error('There was a problem with the fetch operation:', error);
+            }
+            event.target.value = '';
+            setInputMessage(''); // Clear the input field after submission
+        }
+    };
+
+    const handleChange = (event) => {
+        setInputMessage(event.target.value);
+    };
 
     return (
         <div className="container">
@@ -77,7 +160,7 @@ const Agent = () => {
                 </div>
             </div>
             <div className="secondComponent">
-                <div class="header">
+                <div className="header">
                     <div className="left_content">
                         <img src={img1} alt="Menu" className="menu-icon" />
                         <span className="conversation">Conversation</span>
@@ -93,12 +176,13 @@ const Agent = () => {
                 </div>
                 <div className="divider"></div>
                 <div className="chats">
-                    {chats.map(data => (<Chats name={data.name} time={data.time} text={data.text} img={data.avatar} myChat={data.myChat} />))}
+                    {chats.map(data => (<Chats name={data.from?.name} time={convertGMTtoIST(data.created_time)} text={data.message} img={data.avatar} myChat={data.from?.id === myId} />))}
                 </div>
-                <input type="text" name="" id="input-area" placeholder="Message" />
+                <div className="input-area"><input type="text" name="" id="input-area" placeholder="Message" onKeyDown={handleKeyDown} onChange={handleChange}
+                /></div>
             </div>
             <div className="fourthComponent">
-                <div class="profile-container1">
+                <div className="profile-container1">
                     <img src={img} alt="Avatar" className="profile-avatar" />
                     <div className="profile-name"><b>{name}</b></div>
                     {status === "Online" ? (<div className="full-profile-status">
@@ -110,8 +194,8 @@ const Agent = () => {
                             <div className="profile-status">Offline</div>
                         </div>)}
                     <div className="profile-buttons">
-                        <button class="call-button"><CallIcon/>Call</button>
-                        <button class="profile-button"><ProfileIcon/>Profile</button>
+                        <button className="call-button"><CallIcon />Call</button>
+                        <button className="profile-button"><ProfileIcon />Profile</button>
                     </div>
                 </div>
                 <div className="divider profile-divider"></div>

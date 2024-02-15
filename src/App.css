@@ -186,7 +186,16 @@
 
 .chats {
   flex-grow: 1;
+  overflow-y: scroll;
+  margin-bottom: 0px;
   background-color: rgb(240, 240, 240);
+}
+
+.input-area {
+  padding-top: 50px;
+  flex: 0 0 auto;
+  background-color: rgb(240, 240, 240);
+  width: 100%;
 }
 
 .chat {
@@ -248,10 +257,11 @@
 
 #input-area {
   position: absolute; /* Position the text box absolutely */
-  bottom: 20px; /* Align to the bottom of the container */
+  bottom: 10px; /* Align to the bottom of the container */
   width: 90%; /* Take the full width of the container */
   height: 30px; /* Set the height of the text box */
   margin-left: 5%;
+  margin-top: 20px;
 }
 
 .fourthComponent {
